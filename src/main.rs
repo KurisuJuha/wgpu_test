@@ -1,40 +1,41 @@
-use wgpu::{Backends, InstanceDescriptor};
-use winit::{event::*, event_loop::EventLoop, window::WindowBuilder};
+mod state;
+
+use state::State;
+use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
 
 fn main() {
+    pollster::block_on(run());
+}
+
+async fn run() {
     env_logger::init();
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
+    window.set_title("Hello WGPU!");
 
-    let size = window.inner_size();
+    let mut state = State::new(window).await;
 
-    let instance = wgpu::Instance::new(InstanceDescriptor {
-        backends: Backends::all(),
-        flags: (),
-        dx12_shader_compiler: (),
-        gles_minor_version: (),
-    });
-
-    event_loop
-        .run(move |event, event_loop_window_target| match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
+    event_loop.run(move |event, _, control_flow| match event {
+        Event::WindowEvent {
+            window_id,
+            ref event,
+        } if window_id == state.window.id() => match event {
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                        ..
+                    },
                 ..
-            } => {
-                println!("Close requested");
-                event_loop_window_target.exit();
-            }
-            Event::AboutToWait => {
-                // Youtubeみたいなやつならここでもredrawする感じ？なのかな？
-                window.request_redraw();
-            }
-            Event::WindowEvent {
-                event: WindowEvent::RedrawRequested,
-                ..
-            } => {
-                window.request_redraw();
-            }
+            } => *control_flow = ControlFlow::Exit,
             _ => {}
-        })
-        .unwrap();
+        },
+        _ => {}
+    });
 }
