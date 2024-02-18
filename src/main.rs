@@ -1,4 +1,5 @@
 mod state;
+mod vertex;
 
 use state::State;
 use winit::{
