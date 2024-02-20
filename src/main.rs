@@ -1,4 +1,5 @@
 mod state;
+mod texture;
 mod vertex;
 
 use state::State;
